@@ -1,0 +1,52 @@
+{
+  "semantic": {
+    "major": 1,
+    "minor": 2,
+    "patch": 0,
+    "prerelease": ""
+  },
+  "build": {
+    "number": 0,
+    "autoIncrement": true,
+    "resetOnNewDay": false
+  },
+  "metadata": {
+    "lastUpdated": "2024-12-26",
+    "commitHash": "",
+    "branch": "main",
+    "buildMachine": "",
+    "buildUser": ""
+  },
+  "changelog": [
+    {
+      "version": "1.2.0",
+      "date": "2024-12-26",
+      "changes": [
+        "实现标准化错误处理系统",
+        "新增混合版本控制模式",
+        "完善架构文档和API差异说明"
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2024-12-25",
+      "changes": [
+        "初始版本发布",
+        "支持阿里云和腾讯云短信发送",
+        "零第三方依赖HTTP直连实现"
+      ]
+    }
+  ],
+  "config": {
+    "incrementRules": {
+      "patch": "bugfix",
+      "minor": "feature",
+      "major": "breaking"
+    },
+    "versionFormat": {
+      "package": "semantic",
+      "assembly": "date",
+      "informational": "semantic+build"
+    }
+  }
+}

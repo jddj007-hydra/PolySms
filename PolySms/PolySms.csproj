@@ -1,18 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <!-- 项目特定配置 -->
     <PackageId>PolySms</PackageId>
-    <Version>1.0.0</Version>
-    <Authors>PolySms Contributors</Authors>
-    <Description>一个轻量级的多云短信发送SDK，支持阿里云和腾讯云，零第三方依赖</Description>
-    <PackageProjectUrl>https://github.com/yourname/PolySms</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/yourname/PolySms</RepositoryUrl>
-    <PackageTags>sms;aliyun;tencent;china;messaging</PackageTags>
-    <PackageReleaseNotes>重构为单一包，使用HTTP直接调用，大幅减少包体积</PackageReleaseNotes>
+    <Description>一个轻量级的多云短信发送SDK，支持阿里云和腾讯云，零第三方依赖的HTTP直连实现</Description>
+    <PackageReleaseNotes>v1.2.0: 新增标准化错误处理系统，完善API差异处理机制，优化架构设计</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

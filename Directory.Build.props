@@ -1,0 +1,62 @@
+<Project>
+  <PropertyGroup>
+    <!-- 语义化版本控制 - 用于NuGet包 -->
+    <MajorVersion>1</MajorVersion>
+    <MinorVersion>2</MinorVersion>
+    <PatchVersion>0</PatchVersion>
+    <PreReleaseLabel></PreReleaseLabel>
+
+    <!-- 日期版本控制 - 用于程序集 -->
+    <BuildYear>$([System.DateTime]::Now.ToString("yyyy"))</BuildYear>
+    <BuildMonth>$([System.DateTime]::Now.ToString("MM"))</BuildMonth>
+    <BuildDay>$([System.DateTime]::Now.ToString("dd"))</BuildDay>
+    <BuildNumber>0</BuildNumber>
+
+    <!-- 版本组合 -->
+    <Version Condition="'$(PreReleaseLabel)' == ''">$(MajorVersion).$(MinorVersion).$(PatchVersion)</Version>
+    <Version Condition="'$(PreReleaseLabel)' != ''">$(MajorVersion).$(MinorVersion).$(PatchVersion)-$(PreReleaseLabel)</Version>
+
+    <!-- 程序集版本 -->
+    <AssemblyVersion>$(BuildYear).$(BuildMonth).$(BuildDay).$(BuildNumber)</AssemblyVersion>
+    <FileVersion>$(AssemblyVersion)</FileVersion>
+    <InformationalVersion>$(Version)+build.$(BuildYear)$(BuildMonth)$(BuildDay).$(BuildNumber)</InformationalVersion>
+
+    <!-- 包信息 -->
+    <PackageVersion>$(Version)</PackageVersion>
+    <Authors>PolySms Contributors</Authors>
+    <Copyright>Copyright © PolySms Contributors $([System.DateTime]::Now.Year)</Copyright>
+    <PackageProjectUrl>https://github.com/yourname/PolySms</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/yourname/PolySms</RepositoryUrl>
+    <PackageTags>sms;aliyun;tencent;china;messaging;http;direct</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <!-- 构建配置 -->
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>NU1701;NU1702</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <!-- 包生成配置 -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- 调试配置 -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
+  <!-- 版本信息显示 -->
+  <Target Name="DisplayVersionInfo" BeforeTargets="Build">
+    <Message Text="📦 构建信息:" Importance="high" />
+    <Message Text="   └── NuGet版本: $(Version)" Importance="high" />
+    <Message Text="   └── 程序集版本: $(AssemblyVersion)" Importance="high" />
+    <Message Text="   └── 完整版本: $(InformationalVersion)" Importance="high" />
+  </Target>
+</Project>
