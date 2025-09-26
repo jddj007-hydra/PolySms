@@ -3,7 +3,8 @@
     "DefaultProvider": "Aliyun",
     "EnableFailover": true,
     "DefaultSignName": "您的应用名称",
-    "ProviderPriority": ["Aliyun", "Tencent"]
+    "ProviderPriority": ["Aliyun", "Tencent"],
+    "EnableDebugLog": false
   },
   "AliyunSms": {
     "AccessKeyId": "your-aliyun-access-key-id",

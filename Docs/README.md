@@ -10,6 +10,8 @@
 - ⚡ **HTTP直接调用**：使用HTTP直接调用云服务API
 - 🚀 **高性能**：快速的应用启动和运行性能
 - 🔄 **多云支持**：同时支持阿里云和腾讯云短信服务
+- 🛡️ **标准化错误处理**：统一错误码系统和友好错误信息
+- 🔁 **智能重试机制**：自动识别可重试错误类型
 
 ## 📚 文档导航
 
@@ -21,6 +23,9 @@
 ### 🏠️ 架构与设计
 - **[架构设计](架构设计.md)** - 轻量级HTTP架构设计原理和实现详解
 - **[API差异处理](API差异处理.md)** - HTTP直接调用如何处理不同云服务商的API差异
+
+### 📚 特殊配置
+- **[腾讯云密钥配置说明](腾讯云密钥配置说明.md)** - 腾讯云特殊配置和注意事项
 
 ## 🎯 适用场景
 
@@ -59,10 +64,11 @@ PolySms SDK适用于以下场景：
 
 ### 🛡️ 企业级特性
 - 📊 **详细日志** - 完整的结构化日志记录，支持请求追踪
-- 🔍 **错误处理** - 标准化的错误响应和智能重试机制
+- 🔍 **智能错误处理** - 标准化错误码系统和用户友好的错误信息
 - ⚡ **高性能异步** - 基于HttpClient的高性能异步调用
 - 🔒 **安全首位** - 自研签名算法，无第三方安全风险
 - 🧪 **单元测试** - 完整的测试覆盖和连续集成
+- 🔄 **智能重试** - 自动识别可重试错误，提高发送成功率
 
 ### 🔄 轻量级扩展
 - 💫 **无依赖架构** - 无需第三方SDK，添加新提供商只需HTTP实现
@@ -76,7 +82,6 @@ PolySms SDK适用于以下场景：
 ```bash
 # 只需安装一个包，包含所有功能！
 dotnet add package PolySms
-
 ```
 
 ### 2. 配置服务
@@ -99,8 +104,18 @@ var request = new SmsRequest
 // 使用默认提供商发送
 var response = await smsService.SendSmsAsync(request);
 
-// 或指定提供商发送
-var response2 = await smsService.SendSmsAsync(request, "Aliyun");
+if (response.IsSuccess)
+{
+    Console.WriteLine($"发送成功！RequestId: {response.RequestId}");
+}
+else
+{
+    Console.WriteLine($"发送失败: {response.FriendlyErrorMessage}");
+    if (response.IsRetryable)
+    {
+        Console.WriteLine("该错误可以重试");
+    }
+}
 ```
 
 ## ⚡ 技术架构
@@ -110,6 +125,7 @@ var response2 = await smsService.SendSmsAsync(request, "Aliyun");
 - 🔐 **自研签名算法**：内置阿里云RPC签名和腾讯云TC3-HMAC-SHA256签名算法
 - ⚡ **零外部依赖**：除.NET标准库外，无任何第三方依赖
 - 🎨 **统一抽象接口**：为不同云厂商提供统一的调用接口
+- 🛡️ **标准化错误处理**：统一错误码映射系统，提供一致的错误处理体验
 
 ## 📋 API参考
 
@@ -123,6 +139,10 @@ public interface ISmsService
 {
     Task<SmsResponse> SendSmsAsync(SmsRequest request, CancellationToken cancellationToken = default);
     Task<SmsResponse> SendSmsAsync(SmsRequest request, string providerName, CancellationToken cancellationToken = default);
+    Task<SmsResponse> SendSmsAsync(SmsRequest request, SmsProvider provider, CancellationToken cancellationToken = default);
+    IEnumerable<string> GetAvailableProviders();
+    bool IsProviderAvailable(string providerName);
+    bool IsProviderAvailable(SmsProvider provider);
 }
 ```
 
@@ -145,12 +165,99 @@ public class SmsRequest
 ```csharp
 public class SmsResponse
 {
-    public bool IsSuccess { get; set; }        // 是否发送成功
-    public string RequestId { get; set; }      // 请求ID
-    public string BizId { get; set; }          // 业务ID
-    public string ErrorCode { get; set; }      // 错误代码
-    public string ErrorMessage { get; set; }   // 错误消息
-    public string Provider { get; set; }       // 使用的提供商
+    public bool IsSuccess { get; set; }                    // 是否发送成功
+    public string RequestId { get; set; }                  // 请求ID
+    public string BizId { get; set; }                      // 业务ID
+    public string ErrorCode { get; set; }                  // 原始错误代码
+    public string ErrorMessage { get; set; }               // 原始错误消息
+    public string Provider { get; set; }                   // 使用的提供商
+    public StandardErrorCode StandardErrorCode { get; set; } // 标准化错误码
+    public string FriendlyErrorMessage { get; set; }       // 用户友好的错误消息
+    public bool IsRetryable { get; set; }                  // 是否可重试
+}
+```
+
+#### StandardErrorCode
+标准化错误码枚举，将不同云服务商的错误码统一为标准格式。
+
+```csharp
+public enum StandardErrorCode
+{
+    Success,                    // 成功
+    InvalidParameter,           // 参数错误
+    AuthenticationFailed,       // 认证失败
+    InsufficientPermissions,    // 权限不足
+    InsufficientBalance,        // 余额不足
+    RateLimitExceeded,          // 频率限制
+    TemplateNotFound,           // 模板不存在
+    SignatureNotFound,          // 签名不存在
+    InvalidPhoneNumber,         // 手机号格式错误
+    NetworkError,               // 网络错误
+    ProviderInternalError,      // 服务商内部错误
+    Unknown                     // 未知错误
+}
+```
+
+## 🛡️ 错误处理最佳实践
+
+### 基本错误处理
+```csharp
+var response = await smsService.SendSmsAsync(request);
+
+if (!response.IsSuccess)
+{
+    // 使用标准化错误码进行分类处理
+    switch (response.StandardErrorCode)
+    {
+        case StandardErrorCode.RateLimitExceeded:
+            _logger.LogWarning("发送频率过高，请稍后重试: {Message}", response.FriendlyErrorMessage);
+            break;
+        case StandardErrorCode.InsufficientBalance:
+            _logger.LogError("账户余额不足: {Message}", response.FriendlyErrorMessage);
+            // 发送余额不足通知
+            break;
+        case StandardErrorCode.TemplateNotFound:
+            _logger.LogError("短信模板不存在: {Message}", response.FriendlyErrorMessage);
+            // 检查模板配置
+            break;
+        default:
+            if (response.IsRetryable)
+            {
+                _logger.LogWarning("发送失败但可重试: {Message}", response.FriendlyErrorMessage);
+                // 实现重试逻辑
+            }
+            break;
+    }
+}
+```
+
+### 智能重试实现
+```csharp
+public class RetryableSmsService
+{
+    private readonly ISmsService _smsService;
+
+    public async Task<SmsResponse> SendWithRetry(SmsRequest request, int maxRetries = 3)
+    {
+        var response = await _smsService.SendSmsAsync(request);
+
+        int attempts = 1;
+        while (!response.IsSuccess && response.IsRetryable && attempts < maxRetries)
+        {
+            var delay = response.StandardErrorCode switch
+            {
+                StandardErrorCode.RateLimitExceeded => TimeSpan.FromMinutes(1),
+                StandardErrorCode.NetworkError => TimeSpan.FromSeconds(5),
+                _ => TimeSpan.FromSeconds(10)
+            };
+
+            await Task.Delay(delay);
+            attempts++;
+            response = await _smsService.SendSmsAsync(request);
+        }
+
+        return response;
+    }
 }
 ```
 
@@ -174,18 +281,17 @@ public class SmsResponse
 ## 🔗 相关链接
 
 ### 官方资源
-- 🏠 [项目主页](https://github.com/your-repo/PolySms)
+- 🏠 [项目主页](https://github.com/yourname/PolySms)
 - 📖 [API文档](https://docs.your-domain.com/polysms)
-- 💬 [问题反馈](https://github.com/your-repo/PolySms/issues)
+- 💬 [问题反馈](https://github.com/yourname/PolySms/issues)
 
 ### 云服务商文档
 - 📘 [阿里云短信服务文档](https://help.aliyun.com/product/44282.html)
 - 📗 [腾讯云短信文档](https://cloud.tencent.com/document/product/382)
 
 ### 示例和教程
-- 🎬 [视频教程](https://example.com/tutorials)
-- 📝 [博客文章](https://example.com/blog)
-- 💡 [最佳实践](https://example.com/best-practices)
+- 💡 [示例项目](../Example/Program.cs)
+- 📝 [最佳实践](../README.md#智能错误处理和重试策略)
 
 ## ❓ 常见问题
 
@@ -195,6 +301,7 @@ public class SmsResponse
 - ⚡ **高性能**：快速启动，低内存占用
 - 🔒 **更安全**：零第三方SDK依赖，无潜在安全风险
 - 🔄 **多云支持**：统一接口支持多个云服务提供商
+- 🛡️ **标准化错误处理**：统一的错误码系统和友好的错误信息
 
 ### Q: 如何选择短信服务提供商？
 **A:** PolySms支持智能选择策略：
@@ -207,11 +314,12 @@ public class SmsResponse
 **A:** 支持程度取决于您选择的云服务提供商。阿里云和腾讯云都支持国际短信，但可能需要额外的认证和配置。
 
 ### Q: 如何处理发送失败的情况？
-**A:** SDK提供了详细的错误信息，您可以：
+**A:** SDK提供了完善的错误处理机制：
 1. 检查 `SmsResponse.IsSuccess` 判断是否成功
-2. 通过 `ErrorCode` 和 `ErrorMessage` 了解失败原因
-3. 实现重试机制或切换到备用提供商
-
+2. 通过 `StandardErrorCode` 获取标准化错误类型
+3. 使用 `FriendlyErrorMessage` 获取用户友好的错误信息
+4. 根据 `IsRetryable` 判断是否可以重试
+5. 实现智能重试机制或切换到备用提供商
 
 ### Q: 可以同时使用多个提供商吗？
 **A:** 当然可以！PolySms提供强大的多提供商支持：
@@ -219,6 +327,13 @@ public class SmsResponse
 2. 🎯 **精准选择**：`SendSmsAsync(request, "Aliyun")` 或 `SmsProvider.Tencent`
 3. 🔄 **自动转移**：配置优先级和故障转移策略
 4. 📊 **负载均衡**：根据性能指标智能分配流量
+
+### Q: 错误重试机制是如何工作的？
+**A:** PolySms的智能重试机制：
+1. 🔍 **自动识别**：系统自动识别可重试的错误类型
+2. ⏱️ **智能延迟**：根据错误类型使用不同的重试间隔
+3. 🎯 **精准重试**：只对网络错误、服务商内部错误等可重试错误进行重试
+4. 🛡️ **防止滥用**：避免对配置错误、余额不足等不可重试错误进行重试
 
 ## 🤝 贡献指南
 
@@ -247,4 +362,4 @@ public class SmsResponse
 
 **选择PolySms，体验轻量级架构带来的高效短信服务！** 🚀
 
-如有任何问题，请查看相关文档或在[GitHub Issues](https://github.com/your-repo/PolySms/issues)中提问。
+如有任何问题，请查看相关文档或在[GitHub Issues](https://github.com/yourname/PolySms/issues)中提问。

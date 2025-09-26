@@ -23,4 +23,9 @@ public class SmsOptions
     /// 默认短信签名
     /// </summary>
     public string? DefaultSignName { get; set; }
+
+    /// <summary>
+    /// 启用调试日志，记录详细的请求和响应信息（注意：可能包含敏感信息）
+    /// </summary>
+    public bool EnableDebugLog { get; set; } = false;
 }

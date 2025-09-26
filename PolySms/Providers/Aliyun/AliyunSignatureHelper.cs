@@ -80,7 +80,6 @@ public static class AliyunSignatureHelper
                   .Replace("%21", "!")
                   .Replace("%27", "'")
                   .Replace("%28", "(")
-                  .Replace("%29", ")")
-                  .Replace("%7E", "~");
+                  .Replace("%29", ")");
     }
 }

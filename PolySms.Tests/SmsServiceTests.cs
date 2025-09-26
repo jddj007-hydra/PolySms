@@ -1,8 +1,8 @@
-using PolySms.Core.Configuration;
-using PolySms.Core.Enums;
-using PolySms.Core.Interfaces;
-using PolySms.Core.Models;
-using PolySms.Core.Services;
+using PolySms.Configuration;
+using PolySms.Enums;
+using PolySms.Interfaces;
+using PolySms.Models;
+using PolySms.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;

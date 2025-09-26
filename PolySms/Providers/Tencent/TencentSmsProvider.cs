@@ -4,6 +4,8 @@ using PolySms.Configuration;
 using PolySms.Interfaces;
 using PolySms.Models;
 using PolySms.Providers.Http;
+using PolySms.Helpers;
+using PolySms.Enums;
 using System.Text.Json;
 
 namespace PolySms.Providers.Tencent;
@@ -50,12 +52,16 @@ public class TencentSmsProvider : ISmsProvider
 
             _logger.LogDebug("Sending SMS via Tencent to {PhoneNumber} with template {TemplateId}",
                 request.PhoneNumber, request.TemplateId);
-            _logger.LogInformation("Tencent SMS Request Body: {Body}", body);
+
+            // 记录调试日志
+            DebugLogger.LogRequest(_logger, _smsOptions.EnableDebugLog, ProviderName, url, headers, body);
 
             var httpResponse = await _httpClient.PostAsync(url, headers, body, cancellationToken);
             var responseContent = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
 
-            _logger.LogInformation("Tencent SMS API Response: {Response}", responseContent);
+            // 记录响应日志
+            DebugLogger.LogResponse(_logger, _smsOptions.EnableDebugLog, ProviderName,
+                (int)httpResponse.StatusCode, responseContent);
 
             var responseJson = JsonSerializer.Deserialize<JsonElement>(responseContent);
 
@@ -64,13 +70,21 @@ public class TencentSmsProvider : ISmsProvider
                 // 检查是否有错误
                 if (response.TryGetProperty("Error", out var error))
                 {
+                    var errorCode = error.TryGetProperty("Code", out var errorCodeElement) ? errorCodeElement.GetString() ?? string.Empty : string.Empty;
+                    var standardErrorCode = ErrorCodeMapper.MapTencentError(errorCode);
+                    var friendlyMessage = ErrorCodeMapper.GetErrorMessage(standardErrorCode);
+                    var isRetryable = ErrorCodeMapper.IsRetryableError(standardErrorCode);
+
                     return new SmsResponse
                     {
                         IsSuccess = false,
                         RequestId = response.TryGetProperty("RequestId", out var requestId) ? requestId.GetString() ?? string.Empty : string.Empty,
-                        ErrorCode = error.TryGetProperty("Code", out var errorCode) ? errorCode.GetString() ?? string.Empty : string.Empty,
+                        ErrorCode = errorCode,
                         ErrorMessage = error.TryGetProperty("Message", out var errorMessage) ? errorMessage.GetString() ?? string.Empty : string.Empty,
-                        Provider = ProviderName
+                        Provider = ProviderName,
+                        StandardErrorCode = standardErrorCode,
+                        FriendlyErrorMessage = friendlyMessage,
+                        IsRetryable = isRetryable
                     };
                 }
 
@@ -78,36 +92,60 @@ public class TencentSmsProvider : ISmsProvider
                 var sendStatusSet = response.TryGetProperty("SendStatusSet", out var statusSet) && statusSet.GetArrayLength() > 0
                     ? statusSet[0] : (JsonElement?)null;
 
+                var statusCode = sendStatusSet?.TryGetProperty("Code", out var code) == true ? code.GetString() ?? string.Empty : string.Empty;
+                var isSuccess = statusCode == "Ok";
+                var standardErrorCodeSuccess = ErrorCodeMapper.MapTencentError(statusCode);
+                var friendlyMessageSuccess = ErrorCodeMapper.GetErrorMessage(standardErrorCodeSuccess);
+                var isRetryableSuccess = ErrorCodeMapper.IsRetryableError(standardErrorCodeSuccess);
+
                 var result = new SmsResponse
                 {
-                    IsSuccess = sendStatusSet?.TryGetProperty("Code", out var code) == true && code.GetString() == "Ok",
+                    IsSuccess = isSuccess,
                     RequestId = response.TryGetProperty("RequestId", out var requestId2) ? requestId2.GetString() ?? string.Empty : string.Empty,
                     BizId = sendStatusSet?.TryGetProperty("SerialNo", out var serialNo) == true ? serialNo.GetString() ?? string.Empty : string.Empty,
-                    ErrorCode = sendStatusSet?.TryGetProperty("Code", out var statusCode) == true ? statusCode.GetString() ?? string.Empty : string.Empty,
+                    ErrorCode = statusCode,
                     ErrorMessage = sendStatusSet?.TryGetProperty("Message", out var statusMessage) == true ? statusMessage.GetString() ?? string.Empty : string.Empty,
-                    Provider = ProviderName
+                    Provider = ProviderName,
+                    StandardErrorCode = standardErrorCodeSuccess,
+                    FriendlyErrorMessage = friendlyMessageSuccess,
+                    IsRetryable = isRetryableSuccess
                 };
 
                 return result;
             }
+
+            var invalidResponseStandardCode = StandardErrorCode.ProviderInternalError;
+            var invalidResponseFriendlyMessage = ErrorCodeMapper.GetErrorMessage(invalidResponseStandardCode);
+            var invalidResponseIsRetryable = ErrorCodeMapper.IsRetryableError(invalidResponseStandardCode);
 
             return new SmsResponse
             {
                 IsSuccess = false,
                 ErrorCode = "INVALID_RESPONSE",
                 ErrorMessage = "Invalid response format",
-                Provider = ProviderName
+                Provider = ProviderName,
+                StandardErrorCode = invalidResponseStandardCode,
+                FriendlyErrorMessage = invalidResponseFriendlyMessage,
+                IsRetryable = invalidResponseIsRetryable
             };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error sending SMS via Tencent");
+
+            var standardErrorCode = ex is HttpRequestException ? StandardErrorCode.NetworkError : StandardErrorCode.Unknown;
+            var friendlyMessage = ErrorCodeMapper.GetErrorMessage(standardErrorCode);
+            var isRetryable = ErrorCodeMapper.IsRetryableError(standardErrorCode);
+
             return new SmsResponse
             {
                 IsSuccess = false,
                 ErrorCode = "EXCEPTION",
                 ErrorMessage = ex.Message,
-                Provider = ProviderName
+                Provider = ProviderName,
+                StandardErrorCode = standardErrorCode,
+                FriendlyErrorMessage = friendlyMessage,
+                IsRetryable = isRetryable
             };
         }
     }
