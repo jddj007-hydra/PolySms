@@ -1,0 +1,184 @@
+using MergeSMS.Core.Extensions;
+using MergeSMS.Core.Interfaces;
+using MergeSMS.Core.Models;
+using MergeSMS.Providers.Aliyun.Extensions;
+using MergeSMS.Providers.Tencent.Extensions;
+using Microsoft.AspNetCore.Mvc;
+
+// WebAPI项目中使用自定义配置文件的示例
+
+var builder = WebApplication.CreateBuilder(args);
+
+// 添加控制器
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// 方式1: 从自定义配置文件加载SMS服务（推荐）
+builder.Services.AddMergeSmsFromConfigFile("config/sms.json")
+                .AddAliyunSmsFromConfigFile("config/sms.json")
+                .AddTencentSmsFromConfigFile("config/sms.json");
+
+/* 方式2: 使用HostBuilder方式添加配置文件
+builder.Host.AddSmsConfigFile("config/sms.json");
+builder.Services.AddMergeSms(builder.Configuration)
+                .AddAliyunSms(builder.Configuration)
+                .AddTencentSms(builder.Configuration);
+*/
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.MapControllers();
+
+// 简单的API端点示例
+app.MapPost("/api/sms/send", async (SendSmsDto dto, ISmsService smsService) =>
+{
+    var request = new SmsRequest
+    {
+        PhoneNumber = dto.PhoneNumber,
+        TemplateId = dto.TemplateId,
+        SignName = dto.SignName,
+        TemplateParams = dto.TemplateParams
+    };
+
+    var response = await smsService.SendSmsAsync(request);
+
+    return response.IsSuccess
+        ? Results.Ok(new { success = true, provider = response.Provider, requestId = response.RequestId })
+        : Results.BadRequest(new { success = false, error = response.ErrorMessage });
+});
+
+app.MapPost("/api/sms/send-with-provider", async (SendSmsWithProviderDto dto, ISmsService smsService) =>
+{
+    var request = new SmsRequest
+    {
+        PhoneNumber = dto.PhoneNumber,
+        TemplateId = dto.TemplateId,
+        SignName = dto.SignName,
+        TemplateParams = dto.TemplateParams
+    };
+
+    var response = await smsService.SendSmsAsync(request, dto.Provider);
+
+    return response.IsSuccess
+        ? Results.Ok(new { success = true, provider = response.Provider, requestId = response.RequestId })
+        : Results.BadRequest(new { success = false, error = response.ErrorMessage });
+});
+
+app.MapGet("/api/sms/providers", (ISmsService smsService) =>
+{
+    return Results.Ok(new
+    {
+        providers = smsService.GetAvailableProviders(),
+        configFile = "config/sms.json"
+    });
+});
+
+app.Run();
+
+// DTO类定义
+public record SendSmsDto(
+    string PhoneNumber,
+    string TemplateId,
+    string SignName,
+    Dictionary<string, string> TemplateParams);
+
+public record SendSmsWithProviderDto(
+    string PhoneNumber,
+    string TemplateId,
+    string SignName,
+    Dictionary<string, string> TemplateParams,
+    string Provider);
+
+// 控制器示例
+[ApiController]
+[Route("api/[controller]")]
+public class SmsController : ControllerBase
+{
+    private readonly ISmsService _smsService;
+    private readonly ILogger<SmsController> _logger;
+
+    public SmsController(ISmsService smsService, ILogger<SmsController> logger)
+    {
+        _smsService = smsService;
+        _logger = logger;
+    }
+
+    [HttpPost("verification-code")]
+    public async Task<IActionResult> SendVerificationCode([FromBody] SendVerificationCodeRequest request)
+    {
+        var code = GenerateVerificationCode();
+
+        var smsRequest = new SmsRequest
+        {
+            PhoneNumber = request.PhoneNumber,
+            TemplateId = "SMS_VERIFICATION", // 从配置文件读取模板ID更好
+            SignName = "您的应用",
+            TemplateParams = new Dictionary<string, string>
+            {
+                { "code", code },
+                { "expire", "5" }
+            }
+        };
+
+        try
+        {
+            var response = await _smsService.SendSmsAsync(smsRequest);
+
+            if (response.IsSuccess)
+            {
+                _logger.LogInformation("验证码发送成功: {Phone} -> {Code}, Provider: {Provider}",
+                    request.PhoneNumber, code, response.Provider);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "验证码发送成功",
+                    provider = response.Provider,
+                    requestId = response.RequestId
+                });
+            }
+
+            _logger.LogWarning("验证码发送失败: {Phone}, Error: {Error}",
+                request.PhoneNumber, response.ErrorMessage);
+
+            return BadRequest(new
+            {
+                success = false,
+                message = "验证码发送失败",
+                error = response.ErrorMessage
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "发送验证码异常: {Phone}", request.PhoneNumber);
+            return StatusCode(500, new { success = false, message = "系统异常" });
+        }
+    }
+
+    [HttpGet("config-info")]
+    public IActionResult GetConfigInfo()
+    {
+        return Ok(new
+        {
+            configFile = "config/sms.json",
+            availableProviders = _smsService.GetAvailableProviders(),
+            message = "SMS服务使用自定义配置文件config/sms.json"
+        });
+    }
+
+    private static string GenerateVerificationCode()
+    {
+        return Random.Shared.Next(100000, 999999).ToString();
+    }
+}
+
+public record SendVerificationCodeRequest(string PhoneNumber);

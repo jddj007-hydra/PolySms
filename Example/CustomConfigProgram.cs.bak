@@ -1,0 +1,95 @@
+using MergeSMS.Core.Extensions;
+using MergeSMS.Core.Interfaces;
+using MergeSMS.Core.Models;
+using MergeSMS.Providers.Aliyun.Extensions;
+using MergeSMS.Providers.Tencent.Extensions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
+// 使用自定义配置文件的示例
+Console.WriteLine("=== MergeSMS 自定义配置文件示例 ===");
+
+var builder = Host.CreateDefaultBuilder(args);
+
+builder.ConfigureServices((context, services) =>
+{
+    // 添加日志
+    services.AddLogging(config =>
+    {
+        config.AddConsole();
+        config.SetMinimumLevel(LogLevel.Information);
+    });
+
+    // 方式1: 从自定义配置文件加载（推荐）
+    services.AddMergeSmsFromConfigFile("config/sms.json")         // 核心服务
+            .AddAliyunSmsFromConfigFile("config/sms.json")        // 阿里云配置
+            .AddTencentSmsFromConfigFile("config/sms.json");      // 腾讯云配置
+
+    // 方式2: 也可以使用不同的配置文件
+    // services.AddMergeSmsFromConfigFile("config/sms.json")
+    //         .AddAliyunSmsFromConfigFile("config/aliyun.json")
+    //         .AddTencentSmsFromConfigFile("config/tencent.json");
+});
+
+var host = builder.Build();
+
+// 获取服务
+var smsService = host.Services.GetRequiredService<ISmsService>();
+var logger = host.Services.GetRequiredService<ILogger<Program>>();
+
+try
+{
+    // 创建测试请求
+    var request = new SmsRequest
+    {
+        PhoneNumber = "13800138000",
+        TemplateId = "SMS_001",
+        SignName = "测试签名",
+        TemplateParams = new Dictionary<string, string>
+        {
+            { "code", "123456" },
+            { "name", "用户" }
+        }
+    };
+
+    logger.LogInformation("配置文件路径: config/sms.json");
+    logger.LogInformation("可用的提供商: {Providers}", string.Join(", ", smsService.GetAvailableProviders()));
+
+    // 1. 使用默认提供商（由config/sms.json中的DefaultProvider决定）
+    logger.LogInformation("1. 使用默认提供商发送短信");
+    var response1 = await smsService.SendSmsAsync(request);
+    LogResponse(logger, response1, "默认提供商");
+
+    // 2. 指定使用阿里云
+    logger.LogInformation("2. 指定使用阿里云发送短信");
+    var response2 = await smsService.SendSmsAsync(request, "Aliyun");
+    LogResponse(logger, response2, "阿里云");
+
+    // 3. 指定使用腾讯云
+    logger.LogInformation("3. 指定使用腾讯云发送短信");
+    var response3 = await smsService.SendSmsAsync(request, "Tencent");
+    LogResponse(logger, response3, "腾讯云");
+
+    logger.LogInformation("配置文件加载测试完成！");
+}
+catch (Exception ex)
+{
+    logger.LogError(ex, "运行示例时发生异常");
+}
+
+logger.LogInformation("=== 示例程序结束 ===");
+
+static void LogResponse(ILogger logger, SmsResponse response, string scenario)
+{
+    if (response.IsSuccess)
+    {
+        logger.LogInformation("✅ {Scenario} - 发送成功！Provider: {Provider}, RequestId: {RequestId}",
+            scenario, response.Provider, response.RequestId);
+    }
+    else
+    {
+        logger.LogWarning("❌ {Scenario} - 发送失败！Provider: {Provider}, Error: {ErrorCode} - {ErrorMessage}",
+            scenario, response.Provider, response.ErrorCode, response.ErrorMessage);
+    }
+}

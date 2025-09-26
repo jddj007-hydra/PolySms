@@ -1,0 +1,95 @@
+using MergeSMS.Core.Extensions;
+using MergeSMS.Core.Interfaces;
+using MergeSMS.Core.Models;
+using MergeSMS.Providers.Aliyun.Extensions;
+using MergeSMS.Providers.Tencent.Extensions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
+var builder = Host.CreateDefaultBuilder(args);
+
+builder.ConfigureServices((context, services) =>
+{
+    // 添加日志
+    services.AddLogging(config =>
+    {
+        config.AddConsole();
+        config.SetMinimumLevel(LogLevel.Debug);
+    });
+
+    // 添加MergeSMS核心服务
+    services.AddMergeSms();
+
+    // 添加阿里云短信提供商（使用代码配置）
+    services.AddAliyunSms(options =>
+    {
+        options.AccessKeyId = "your-aliyun-access-key-id";
+        options.AccessKeySecret = "your-aliyun-access-key-secret";
+    });
+
+    // 添加腾讯云短信提供商（使用代码配置）
+    services.AddTencentSms(options =>
+    {
+        options.SecretId = "your-tencent-secret-id";
+        options.SecretKey = "your-tencent-secret-key";
+        options.SmsSdkAppId = "your-sms-sdk-app-id";
+    });
+});
+
+var host = builder.Build();
+
+// 获取短信服务
+var smsService = host.Services.GetRequiredService<ISmsService>();
+var logger = host.Services.GetRequiredService<ILogger<Program>>();
+
+try
+{
+    // 创建短信请求
+    var request = new SmsRequest
+    {
+        PhoneNumber = "13800138000",
+        TemplateId = "SMS_001",
+        SignName = "测试签名",
+        TemplateParams = new Dictionary<string, string>
+        {
+            { "code", "123456" }
+        }
+    };
+
+    logger.LogInformation("开始发送短信...");
+
+    // 使用默认提供商发送短信
+    var response = await smsService.SendSmsAsync(request);
+
+    if (response.IsSuccess)
+    {
+        logger.LogInformation("短信发送成功！Provider: {Provider}, RequestId: {RequestId}",
+            response.Provider, response.RequestId);
+    }
+    else
+    {
+        logger.LogError("短信发送失败！Provider: {Provider}, Error: {ErrorCode} - {ErrorMessage}",
+            response.Provider, response.ErrorCode, response.ErrorMessage);
+    }
+
+    // 指定使用腾讯云发送
+    logger.LogInformation("使用腾讯云发送短信...");
+    var tencentResponse = await smsService.SendSmsAsync(request, "Tencent");
+
+    if (tencentResponse.IsSuccess)
+    {
+        logger.LogInformation("腾讯云短信发送成功！RequestId: {RequestId}", tencentResponse.RequestId);
+    }
+    else
+    {
+        logger.LogError("腾讯云短信发送失败！Error: {ErrorCode} - {ErrorMessage}",
+            tencentResponse.ErrorCode, tencentResponse.ErrorMessage);
+    }
+}
+catch (Exception ex)
+{
+    logger.LogError(ex, "发送短信时发生异常");
+}
+
+logger.LogInformation("示例程序执行完成");

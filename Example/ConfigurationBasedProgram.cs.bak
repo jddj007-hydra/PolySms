@@ -1,0 +1,76 @@
+using MergeSMS.Core.Extensions;
+using MergeSMS.Core.Interfaces;
+using MergeSMS.Core.Models;
+using MergeSMS.Providers.Aliyun.Extensions;
+using MergeSMS.Providers.Tencent.Extensions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
+var builder = Host.CreateDefaultBuilder(args);
+
+builder.ConfigureServices((context, services) =>
+{
+    // 添加日志
+    services.AddLogging(config =>
+    {
+        config.AddConsole();
+        config.SetMinimumLevel(LogLevel.Information);
+    });
+
+    // 从配置文件读取MergeSMS配置
+    services.AddMergeSms(context.Configuration);
+
+    // 从配置文件读取提供商配置
+    services.AddAliyunSms(context.Configuration);
+    services.AddTencentSms(context.Configuration);
+});
+
+var host = builder.Build();
+
+// 获取服务
+var smsService = host.Services.GetRequiredService<ISmsService>();
+var logger = host.Services.GetRequiredService<ILogger<Program>>();
+
+// 创建测试请求
+var request = new SmsRequest
+{
+    PhoneNumber = "13800138000",
+    TemplateId = "SMS_001",
+    SignName = "测试签名",
+    TemplateParams = new Dictionary<string, string>
+    {
+        { "code", "123456" }
+    }
+};
+
+try
+{
+    logger.LogInformation("=== 基于配置文件的MergeSMS使用示例 ===");
+
+    // 使用默认提供商（由配置文件中的Sms:DefaultProvider决定）
+    var response = await smsService.SendSmsAsync(request);
+
+    if (response.IsSuccess)
+    {
+        logger.LogInformation("✅ 短信发送成功！Provider: {Provider}, RequestId: {RequestId}",
+            response.Provider, response.RequestId);
+    }
+    else
+    {
+        logger.LogWarning("❌ 短信发送失败！Error: {ErrorCode} - {ErrorMessage}",
+            response.ErrorCode, response.ErrorMessage);
+    }
+
+    // 显示配置信息
+    var configuration = host.Services.GetRequiredService<IConfiguration>();
+    logger.LogInformation("默认提供商配置: {Provider}", configuration["Sms:DefaultProvider"]);
+    logger.LogInformation("故障转移配置: {Failover}", configuration["Sms:EnableFailover"]);
+}
+catch (Exception ex)
+{
+    logger.LogError(ex, "发送短信时发生异常");
+}
+
+logger.LogInformation("=== 示例程序执行完成 ===");
