@@ -45,10 +45,19 @@ public static class AliyunSignatureHelper
 
     private static string CalculateSignature(string accessKeySecret, Dictionary<string, string> parameters)
     {
-        var sortedParams = parameters.OrderBy(kv => kv.Key)
+        // 阿里云签名算法：
+        // 1. 排除Signature参数
+        // 2. 按Key字典序排序
+        // 3. 每个参数都需要进行URL编码
+        // 4. 构造规范化查询字符串
+
+        var sortedParams = parameters.Where(kv => kv.Key != "Signature")
+                                  .OrderBy(kv => kv.Key, StringComparer.Ordinal)
                                   .Select(kv => $"{UrlEncode(kv.Key)}={UrlEncode(kv.Value)}");
 
         var canonicalizedQueryString = string.Join("&", sortedParams);
+
+        // 构造待签名字符串: HTTPMethod&URI&CanonicalizedQueryString
         var stringToSign = $"POST&{UrlEncode("/")}&{UrlEncode(canonicalizedQueryString)}";
 
         var key = Encoding.UTF8.GetBytes(accessKeySecret + "&");
@@ -61,8 +70,17 @@ public static class AliyunSignatureHelper
 
     private static string UrlEncode(string value)
     {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+
         return Uri.EscapeDataString(value)
+                  .Replace("+", "%20")
                   .Replace("*", "%2A")
+                  .Replace("%7E", "~")
+                  .Replace("%21", "!")
+                  .Replace("%27", "'")
+                  .Replace("%28", "(")
+                  .Replace("%29", ")")
                   .Replace("%7E", "~");
     }
 }

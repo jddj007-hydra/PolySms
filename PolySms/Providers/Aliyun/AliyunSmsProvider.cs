@@ -11,14 +11,16 @@ namespace PolySms.Providers.Aliyun;
 public class AliyunSmsProvider : ISmsProvider
 {
     private readonly AliyunSmsOptions _options;
+    private readonly SmsOptions _smsOptions;
     private readonly ILogger<AliyunSmsProvider> _logger;
     private readonly IHttpSmsClient _httpClient;
 
     public string ProviderName => "Aliyun";
 
-    public AliyunSmsProvider(IOptions<AliyunSmsOptions> options, ILogger<AliyunSmsProvider> logger, IHttpSmsClient httpClient)
+    public AliyunSmsProvider(IOptions<AliyunSmsOptions> options, IOptions<SmsOptions> smsOptions, ILogger<AliyunSmsProvider> logger, IHttpSmsClient httpClient)
     {
         _options = options.Value ?? throw new ArgumentNullException(nameof(options));
+        _smsOptions = smsOptions.Value ?? throw new ArgumentNullException(nameof(smsOptions));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
     }
@@ -27,11 +29,15 @@ public class AliyunSmsProvider : ISmsProvider
     {
         try
         {
+            // 获取签名：优先使用请求中的签名，否则使用全局默认签名
+            var signName = request.SignName ?? _smsOptions.DefaultSignName
+                ?? throw new ArgumentException("SignName is required. Please set SignName in request or configure DefaultSignName in SmsOptions.");
+
             var parameters = new Dictionary<string, string>
             {
                 ["Action"] = "SendSms",
                 ["PhoneNumbers"] = request.PhoneNumber,
-                ["SignName"] = request.SignName,
+                ["SignName"] = signName,
                 ["TemplateCode"] = request.TemplateId
             };
 

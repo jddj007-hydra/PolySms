@@ -9,10 +9,10 @@
     "AccessKeySecret": "your-aliyun-access-key-secret",
     "Endpoint": "dysmsapi.aliyuncs.com"
   },
-  "TencentSms": {
-    "SecretId": "your-tencent-secret-id",
-    "SecretKey": "your-tencent-secret-key",
-    "Region": "ap-beijing",
-    "SmsSdkAppId": "your-sms-sdk-app-id"
-  }
+    "TencentSms": {
+        "SecretId": "1",
+        "SecretKey": "",
+        "Region": "宜宾市审计局",
+        "SmsSdkAppId": "your-sms-sdk-app-id"
+    }
 }

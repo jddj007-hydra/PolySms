@@ -23,12 +23,33 @@ public class HttpSmsClient : IHttpSmsClient
 
             foreach (var header in headers)
             {
-                request.Headers.Add(header.Key, header.Value);
+                if (header.Key.Equals("Authorization", StringComparison.OrdinalIgnoreCase))
+                {
+                    // 特殊处理Authorization header
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("TC3-HMAC-SHA256", header.Value.Substring("TC3-HMAC-SHA256 ".Length));
+                }
+                else if (header.Key.Equals("Content-Type", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Content-Type通过Content设置，跳过
+                    continue;
+                }
+                else
+                {
+                    request.Headers.Add(header.Key, header.Value);
+                }
             }
 
             if (!string.IsNullOrEmpty(content))
             {
-                request.Content = new StringContent(content, System.Text.Encoding.UTF8, "application/x-www-form-urlencoded");
+                // 腾讯云需要application/json，阿里云不使用body
+                if (headers.ContainsKey("Content-Type") && headers["Content-Type"].Contains("application/json"))
+                {
+                    request.Content = new StringContent(content, System.Text.Encoding.UTF8, "application/json");
+                }
+                else
+                {
+                    request.Content = new StringContent(content, System.Text.Encoding.UTF8, "application/x-www-form-urlencoded");
+                }
             }
 
             _logger.LogDebug("Sending HTTP request to {Url}", url);

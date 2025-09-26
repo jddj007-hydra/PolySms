@@ -18,4 +18,9 @@ public class SmsOptions
     /// 提供商优先级列表，按优先级排序
     /// </summary>
     public List<string> ProviderPriority { get; set; } = new() { "Aliyun", "Tencent" };
+
+    /// <summary>
+    /// 默认短信签名
+    /// </summary>
+    public string? DefaultSignName { get; set; }
 }

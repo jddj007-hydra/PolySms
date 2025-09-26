@@ -18,7 +18,7 @@ public static class TencentSignatureHelper
     {
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var date = DateTimeOffset.FromUnixTimeSeconds(timestamp).ToString("yyyy-MM-dd");
-        var requestBody = JsonSerializer.Serialize(requestData, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var requestBody = JsonSerializer.Serialize(requestData);
 
         var canonicalRequest = BuildCanonicalRequest("POST", "/", "", GetCanonicalHeaders(timestamp), "content-type;host", Sha256Hex(requestBody));
         var credentialScope = $"{date}/{Service}/tc3_request";
