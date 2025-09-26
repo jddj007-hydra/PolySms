@@ -23,10 +23,10 @@
 
     <!-- 包信息 -->
     <PackageVersion>$(Version)</PackageVersion>
-    <Authors>PolySms Contributors</Authors>
-    <Copyright>Copyright © PolySms Contributors $([System.DateTime]::Now.Year)</Copyright>
-    <PackageProjectUrl>https://github.com/yourname/PolySms</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/yourname/PolySms</RepositoryUrl>
+    <Authors>jddj007-hydra</Authors>
+    <Copyright>Copyright © jddj007-hydra $([System.DateTime]::Now.Year)</Copyright>
+    <PackageProjectUrl>https://github.com/jddj007-hydra/PolySms</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jddj007-hydra/PolySms</RepositoryUrl>
     <PackageTags>sms;aliyun;tencent;china;messaging;http;direct</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
 
