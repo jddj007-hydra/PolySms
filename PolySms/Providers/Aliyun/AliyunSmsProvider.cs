@@ -50,6 +50,7 @@ public class AliyunSmsProvider : ISmsProvider
 
             var (url, headers) = AliyunSignatureHelper.BuildRequest(
                 _options.Endpoint,
+                _options.UseHttps,
                 _options.AccessKeyId,
                 _options.AccessKeySecret,
                 parameters);

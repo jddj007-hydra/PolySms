@@ -9,4 +9,5 @@ public class TencentSmsOptions
     public string Region { get; set; } = "ap-beijing";
     public string SmsSdkAppId { get; set; } = string.Empty;
     public string Endpoint { get; set; } = "sms.tencentcloudapi.com";
+    public bool UseHttps { get; set; } = true;
 }

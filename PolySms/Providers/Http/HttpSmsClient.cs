@@ -33,6 +33,10 @@ public class HttpSmsClient : IHttpSmsClient
                     // Content-Type通过Content设置，跳过
                     continue;
                 }
+                else if (header.Key.Equals("Host", StringComparison.OrdinalIgnoreCase))
+                {
+                    request.Headers.Host = header.Value;
+                }
                 else
                 {
                     request.Headers.Add(header.Key, header.Value);

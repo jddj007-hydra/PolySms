@@ -1,3 +1,4 @@
+using System;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -12,8 +13,17 @@ public static class AliyunSignatureHelper
         string endpoint,
         string accessKeyId,
         string accessKeySecret,
+        Dictionary<string, string> parameters) =>
+        BuildRequest(endpoint, useHttps: true, accessKeyId, accessKeySecret, parameters);
+
+    public static (string Url, Dictionary<string, string> Headers) BuildRequest(
+        string endpoint,
+        bool useHttps,
+        string accessKeyId,
+        string accessKeySecret,
         Dictionary<string, string> parameters)
     {
+        var endpointUri = BuildEndpointUri(endpoint, useHttps);
         var timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
         var nonce = Guid.NewGuid().ToString();
 
@@ -35,7 +45,7 @@ public static class AliyunSignatureHelper
             allParameters.OrderBy(kv => kv.Key)
                         .Select(kv => $"{UrlEncode(kv.Key)}={UrlEncode(kv.Value)}"));
 
-        var url = $"https://{endpoint}/?{queryString}";
+        var url = $"{BuildRequestBaseUrl(endpointUri)}?{queryString}";
 
         return (url, new Dictionary<string, string>
         {
@@ -81,5 +91,42 @@ public static class AliyunSignatureHelper
                   .Replace("%27", "'")
                   .Replace("%28", "(")
                   .Replace("%29", ")");
+    }
+
+    private static Uri BuildEndpointUri(string endpoint, bool useHttps)
+    {
+        if (string.IsNullOrWhiteSpace(endpoint))
+        {
+            throw new ArgumentException("Endpoint is required", nameof(endpoint));
+        }
+
+        var trimmed = endpoint.Trim();
+
+        if (Uri.TryCreate(trimmed, UriKind.Absolute, out var absoluteUri))
+        {
+            return absoluteUri;
+        }
+
+        var scheme = useHttps ? "https" : "http";
+        var normalized = $"{scheme}://{trimmed.TrimStart('/')}";
+
+        if (!Uri.TryCreate(normalized, UriKind.Absolute, out absoluteUri))
+        {
+            throw new ArgumentException("Invalid endpoint format", nameof(endpoint));
+        }
+
+        return absoluteUri;
+    }
+
+    private static string BuildRequestBaseUrl(Uri endpointUri)
+    {
+        var builder = new UriBuilder(endpointUri)
+        {
+            Path = string.IsNullOrEmpty(endpointUri.AbsolutePath) ? "/" : endpointUri.AbsolutePath,
+            Query = string.Empty,
+            Fragment = string.Empty
+        };
+
+        return builder.Uri.GetLeftPart(UriPartial.Path);
     }
 }

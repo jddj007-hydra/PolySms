@@ -4,7 +4,7 @@
     <!-- 项目特定配置 -->
     <PackageId>PolySms</PackageId>
     <Description>一个轻量级的多云短信发送SDK，支持阿里云和腾讯云，零第三方依赖的HTTP直连实现</Description>
-    <PackageReleaseNotes>v1.2.0: 新增标准化错误处理系统，完善API差异处理机制，优化架构设计</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.4.0: 新增 UseHttps 配置用于内网HTTP代理场景，签名/Host 处理支持自定义 Endpoint 并修复代理 Host 头</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

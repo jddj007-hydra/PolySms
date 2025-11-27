@@ -32,16 +32,20 @@ dotnet add package PolySms
   "AliyunSms": {
     "AccessKeyId": "your-aliyun-access-key-id",
     "AccessKeySecret": "your-aliyun-access-key-secret",
-    "Endpoint": "dysmsapi.aliyuncs.com"
+    "Endpoint": "dysmsapi.aliyuncs.com",
+    "UseHttps": true
   },
   "TencentSms": {
     "SecretId": "your-tencent-secret-id",
     "SecretKey": "your-tencent-secret-key",
     "Region": "ap-beijing",
-    "SmsSdkAppId": "your-sms-sdk-app-id"
+    "SmsSdkAppId": "your-sms-sdk-app-id",
+    "UseHttps": true
   }
 }
 ```
+
+如需通过内网反代访问短信服务而且反代节点没有证书，只需把对应提供商的 `UseHttps` 设置为 `false`，SDK 就会改用 HTTP 发送请求，签名/鉴权流程不受影响。
 
 **2. 在 `Program.cs` 中注册服务：**
 ```csharp

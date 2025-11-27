@@ -7,4 +7,5 @@ public class AliyunSmsOptions
     public string AccessKeyId { get; set; } = string.Empty;
     public string AccessKeySecret { get; set; } = string.Empty;
     public string Endpoint { get; set; } = "dysmsapi.aliyuncs.com";
+    public bool UseHttps { get; set; } = true;
 }

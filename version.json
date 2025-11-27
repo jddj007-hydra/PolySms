@@ -1,7 +1,7 @@
 {
   "semantic": {
     "major": 1,
-    "minor": 2,
+    "minor": 4,
     "patch": 0,
     "prerelease": ""
   },
@@ -11,13 +11,22 @@
     "resetOnNewDay": false
   },
   "metadata": {
-    "lastUpdated": "2024-12-26",
+    "lastUpdated": "2025-11-27",
     "commitHash": "",
     "branch": "main",
     "buildMachine": "",
     "buildUser": ""
   },
   "changelog": [
+    {
+      "version": "1.4.0",
+      "date": "2025-11-27",
+      "changes": [
+        "新增 UseHttps 配置，可按提供商切换 HTTP/HTTPS 以适配内网反代场景",
+        "签名助手支持完整 Endpoint URL 并保留 Host 头，解决反代下鉴权失败问题",
+        "HTTP 客户端单独处理 Host/Authorization 头，保证代理链一致性"
+      ]
+    },
     {
       "version": "1.2.0",
       "date": "2024-12-26",
