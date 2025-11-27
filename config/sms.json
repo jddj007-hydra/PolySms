@@ -2,22 +2,22 @@
   "Sms": {
     "DefaultProvider": "Aliyun",
     "EnableFailover": true,
-    "DefaultSignName": "您的应用名称",
+    "DefaultSignName": "宜宾市审计局",
     "ProviderPriority": ["Aliyun", "Tencent"],
-    "EnableDebugLog": false
+    "EnableDebugLog": true
   },
   "AliyunSms": {
     "AccessKeyId": "your-aliyun-access-key-id",
     "AccessKeySecret": "your-aliyun-access-key-secret",
-    "Endpoint": "dysmsapi.aliyuncs.com",
-    "UseHttps": true
+    "Endpoint": "192.168.124.203:9801",
+    "UseHttps": false
   },
   "TencentSms": {
     "SecretId": "your-tencent-secret-id",
     "SecretKey": "your-tencent-secret-key",
     "Region": "ap-beijing",
     "SmsSdkAppId": "your-sms-sdk-app-id",
-    "Endpoint": "sms.tencentcloudapi.com",
-    "UseHttps": true
+    "Endpoint": "192.168.124.203:9802",
+    "UseHttps": false
   }
 }

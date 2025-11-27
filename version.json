@@ -1,7 +1,7 @@
 {
   "semantic": {
     "major": 1,
-    "minor": 4,
+    "minor": 5,
     "patch": 0,
     "prerelease": ""
   },
@@ -18,6 +18,15 @@
     "buildUser": ""
   },
   "changelog": [
+    {
+      "version": "1.5.0",
+      "date": "2025-11-27",
+      "changes": [
+        "修复 Example 项目未正确加载配置文件的问题，改用 AddPolySmsFromConfigFile 方法",
+        "更新配置文件示例，添加内网反代场景的完整配置（UseHttps: false）",
+        "优化配置加载流程，确保 Endpoint 和 UseHttps 参数正确生效"
+      ]
+    },
     {
       "version": "1.4.0",
       "date": "2025-11-27",

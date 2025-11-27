@@ -2,7 +2,7 @@
   <PropertyGroup>
     <!-- 语义化版本控制 - 用于NuGet包 -->
     <MajorVersion>1</MajorVersion>
-    <MinorVersion>4</MinorVersion>
+    <MinorVersion>5</MinorVersion>
     <PatchVersion>0</PatchVersion>
     <PreReleaseLabel></PreReleaseLabel>
 

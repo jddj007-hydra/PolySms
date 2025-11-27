@@ -19,23 +19,8 @@ builder.ConfigureServices((context, services) =>
         config.SetMinimumLevel(LogLevel.Information);
     });
 
-    // 配置PolySms（使用全局配置）
-    services.AddPolySms(
-        sms => {
-            sms.DefaultProvider = "Tencent";//"Aliyun";
-            sms.EnableFailover = false;       // 关闭故障转移
-            sms.DefaultSignName = "宜宾市审计局"; // 设置默认短信签名
-            sms.ProviderPriority = new List<string> { "Aliyun", "Tencent" };
-        },
-        aliyun => {
-            aliyun.AccessKeyId = "";
-            aliyun.AccessKeySecret = "";
-        },
-        tencent => {
-            tencent.SecretId = "";
-            tencent.SecretKey = "";
-            tencent.SmsSdkAppId = "";
-        });
+    // 配置PolySms（从配置文件加载）
+    services.AddPolySmsFromConfigFile("config/sms.json");
 });
 
 
