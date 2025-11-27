@@ -11,6 +11,7 @@ public static class TencentSignatureHelper
     private const string Version = "2021-01-11";
 
     public static (string Url, Dictionary<string, string> Headers, string Body) BuildRequest(
+        string endpoint,
         string region,
         string secretId,
         string secretKey,
@@ -20,7 +21,7 @@ public static class TencentSignatureHelper
         var date = DateTimeOffset.FromUnixTimeSeconds(timestamp).ToString("yyyy-MM-dd");
         var requestBody = JsonSerializer.Serialize(requestData);
 
-        var canonicalRequest = BuildCanonicalRequest("POST", "/", "", GetCanonicalHeaders(timestamp), "content-type;host", Sha256Hex(requestBody));
+        var canonicalRequest = BuildCanonicalRequest("POST", "/", "", GetCanonicalHeaders(endpoint, timestamp), "content-type;host", Sha256Hex(requestBody));
         var credentialScope = $"{date}/{Service}/tc3_request";
         var stringToSign = $"{Algorithm}\n{timestamp}\n{credentialScope}\n{Sha256Hex(canonicalRequest)}";
         var signature = Sign(secretKey, date, stringToSign);
@@ -31,14 +32,14 @@ public static class TencentSignatureHelper
         {
             ["Authorization"] = authorization,
             ["Content-Type"] = "application/json; charset=utf-8",
-            ["Host"] = "sms.tencentcloudapi.com",
+            ["Host"] = endpoint,
             ["X-TC-Action"] = "SendSms",
             ["X-TC-Timestamp"] = timestamp.ToString(),
             ["X-TC-Version"] = Version,
             ["X-TC-Region"] = region
         };
 
-        return ("https://sms.tencentcloudapi.com/", headers, requestBody);
+        return ($"https://{endpoint}/", headers, requestBody);
     }
 
     private static string BuildCanonicalRequest(string httpMethod, string canonicalUri, string canonicalQueryString,
@@ -47,9 +48,9 @@ public static class TencentSignatureHelper
         return $"{httpMethod}\n{canonicalUri}\n{canonicalQueryString}\n{canonicalHeaders}\n{signedHeaders}\n{hashedPayload}";
     }
 
-    private static string GetCanonicalHeaders(long timestamp)
+    private static string GetCanonicalHeaders(string endpoint, long timestamp)
     {
-        return $"content-type:application/json; charset=utf-8\nhost:sms.tencentcloudapi.com\n";
+        return $"content-type:application/json; charset=utf-8\nhost:{endpoint}\n";
     }
 
     private static string Sign(string secretKey, string date, string stringToSign)

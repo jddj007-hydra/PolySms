@@ -15,6 +15,7 @@
     "SecretId": "your-tencent-secret-id",
     "SecretKey": "your-tencent-secret-key",
     "Region": "ap-beijing",
-    "SmsSdkAppId": "your-sms-sdk-app-id"
+    "SmsSdkAppId": "your-sms-sdk-app-id",
+    "Endpoint": "sms.tencentcloudapi.com"
   }
 }

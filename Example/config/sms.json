@@ -13,6 +13,7 @@
         "SecretId": "1",
         "SecretKey": "",
         "Region": "宜宾市审计局",
-        "SmsSdkAppId": "your-sms-sdk-app-id"
+        "SmsSdkAppId": "your-sms-sdk-app-id",
+        "Endpoint": "sms.tencentcloudapi.com"
     }
 }
