@@ -2,7 +2,7 @@
   "semantic": {
     "major": 1,
     "minor": 5,
-    "patch": 1,
+    "patch": 2,
     "prerelease": ""
   },
   "build": {
@@ -11,13 +11,20 @@
     "resetOnNewDay": false
   },
   "metadata": {
-    "lastUpdated": "2025-11-28",
+    "lastUpdated": "2025-12-01",
     "commitHash": "",
     "branch": "main",
     "buildMachine": "",
     "buildUser": ""
   },
   "changelog": [
+    {
+      "version": "1.5.2",
+      "date": "2025-12-01",
+      "changes": [
+        "腾讯云接口新增 OriginEndpoint 参数，解决代理场景下签名验证问题"
+      ]
+    },
     {
       "version": "1.5.1",
       "date": "2025-11-28",

@@ -3,7 +3,7 @@
     <!-- 语义化版本控制 - 用于NuGet包 -->
     <MajorVersion>1</MajorVersion>
     <MinorVersion>5</MinorVersion>
-    <PatchVersion>1</PatchVersion>
+    <PatchVersion>2</PatchVersion>
     <PreReleaseLabel></PreReleaseLabel>
 
     <!-- 日期版本控制 - 用于程序集 -->
