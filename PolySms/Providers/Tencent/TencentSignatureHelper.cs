@@ -21,6 +21,25 @@ public static class TencentSignatureHelper
 
     public static (string Url, Dictionary<string, string> Headers, string Body) BuildRequest(
         string endpoint,
+        string? signatureEndpoint,
+        string region,
+        string secretId,
+        string secretKey,
+        object requestData) =>
+        BuildRequest(endpoint, signatureEndpoint, useHttps: true, region, secretId, secretKey, requestData);
+
+    public static (string Url, Dictionary<string, string> Headers, string Body) BuildRequest(
+        string endpoint,
+        bool useHttps,
+        string region,
+        string secretId,
+        string secretKey,
+        object requestData) =>
+        BuildRequest(endpoint, signatureEndpoint: null, useHttps, region, secretId, secretKey, requestData);
+
+    public static (string Url, Dictionary<string, string> Headers, string Body) BuildRequest(
+        string endpoint,
+        string? signatureEndpoint,
         bool useHttps,
         string region,
         string secretId,
@@ -28,8 +47,11 @@ public static class TencentSignatureHelper
         object requestData)
     {
         var endpointUri = BuildEndpointUri(endpoint, useHttps);
-        var hostHeader = GetHostHeader(endpointUri);
-        var requestPath = GetRequestPath(endpointUri);
+        var signatureEndpointUri = string.IsNullOrWhiteSpace(signatureEndpoint)
+            ? endpointUri
+            : BuildEndpointUri(signatureEndpoint, useHttps);
+        var hostHeader = GetHostHeader(signatureEndpointUri);
+        var requestPath = GetRequestPath(signatureEndpointUri);
 
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var date = DateTimeOffset.FromUnixTimeSeconds(timestamp).ToString("yyyy-MM-dd");

@@ -46,6 +46,7 @@ public class TencentSmsProvider : ISmsProvider
 
             var (url, headers, body) = TencentSignatureHelper.BuildRequest(
                 _options.Endpoint,
+                _options.OriginEndpoint,
                 _options.UseHttps,
                 _options.Region,
                 _options.SecretId,

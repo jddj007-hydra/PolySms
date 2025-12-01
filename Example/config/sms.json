@@ -7,7 +7,9 @@
   "AliyunSms": {
     "AccessKeyId": "your-aliyun-access-key-id",
     "AccessKeySecret": "your-aliyun-access-key-secret",
-    "Endpoint": "dysmsapi.aliyuncs.com"
+    "Endpoint": "dysmsapi.aliyuncs.com",
+    "UseHttps": false
+
   },
     "TencentSms": {
         "SecretId": "1",
